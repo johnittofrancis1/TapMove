@@ -1,0 +1,2 @@
+rootProject.name='TapMove'
+include ':app'

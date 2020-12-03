@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".GalleryActivity"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+>
+
+        <TextView
+                android:id="@+id/found"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Found 0 images"
+                android:textSize="25sp"
+                android:layout_marginBottom="15dp"
+                android:layout_marginTop="5dp"
+        />
+
+        <EditText
+                android:id="@+id/target_folder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="/storage/Pictures/Notes"
+                android:layout_below="@+id/found"
+                android:layout_marginRight="40dp"
+        />
+
+        <ImageView
+                android:id="@+id/target_button"
+                android:layout_width="30dp"
+                android:layout_height="40dp"
+                android:src="@drawable/folder"
+                android:layout_marginLeft="0dp"
+                android:layout_alignTop="@+id/target_folder"
+                android:layout_alignParentRight="true"
+        />
+
+        <CheckBox
+                android:id="@+id/select_all"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignBottom="@+id/no_selected"
+        />
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select All"
+                android:textSize="20sp"
+                android:layout_toRightOf="@+id/select_all"
+                android:layout_alignBottom="@+id/select_all"
+        />
+
+        <TextView
+                android:id="@+id/no_selected"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12 selected"
+                android:textSize="20sp"
+                android:layout_below="@+id/target_folder"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="5dp"
+                android:layout_alignParentRight="true"
+        />
+
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/gallery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/no_selected"
+        />
+
+</RelativeLayout>
