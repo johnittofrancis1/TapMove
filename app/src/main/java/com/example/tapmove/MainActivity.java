@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
             // Requesting the permission
             ActivityCompat.requestPermissions(MainActivity.this,
-                    new String[] { Manifest.permission.READ_EXTERNAL_STORAGE },
+                    new String[] { Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE },
                     STORAGE_PERMISSION_CODE);
         }
 
@@ -286,6 +286,7 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(getActivity(), GalleryActivity.class);
             Bundle args = new Bundle();
             Log.e("TRANSFER", String.valueOf(imageList.size()));
+            args.putString("CHOSEN_FOLDER_PATH", chosenFolder.getText().toString());
             args.putSerializable("ARRAYLIST",(Serializable) imageList);
             intent.putExtra("BUNDLE",args);
             startActivity(intent);

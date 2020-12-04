@@ -23,7 +23,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.function.Predicate;
 
 public class GalleryActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
@@ -32,6 +35,8 @@ public class GalleryActivity extends AppCompatActivity {
     private EditText targetFolder;
     private ImageView targetFolderButton;
     private CheckBox selectAll;
+    private String chosenFolderPath;
+    private CheckBoxUpdate checkBoxUpdate;
 
     GalleryAdapter galleryAdapter;
     ArrayList<GalleryImage> imageList;
@@ -59,6 +64,7 @@ public class GalleryActivity extends AppCompatActivity {
         Intent intent = getIntent();
         Bundle args = intent.getBundleExtra("BUNDLE");
         this.imageList = (ArrayList<GalleryImage>) args.getSerializable("ARRAYLIST");
+        this.chosenFolderPath = args.getString("CHOSEN_FOLDER_PATH");
 
         Log.e("COUNT", "Total images: "+this.imageList.size());
 
@@ -76,7 +82,7 @@ public class GalleryActivity extends AppCompatActivity {
             }
         });
 
-        CheckBoxSelect checkBoxSelect = new CheckBoxSelect() {
+        checkBoxUpdate = new CheckBoxUpdate() {
             @Override
             public void updateNoSelected() {
                 runOnUiThread(new Runnable() {
@@ -99,7 +105,7 @@ public class GalleryActivity extends AppCompatActivity {
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(getApplicationContext(),2);
         recyclerView.setLayoutManager(layoutManager);
 
-        galleryAdapter = new GalleryAdapter(getApplicationContext(), this.imageList, checkBoxSelect);
+        galleryAdapter = new GalleryAdapter(getApplicationContext(), this.imageList, checkBoxUpdate);
         recyclerView.addItemDecoration(new GridSpacingItemDecoration(2, 20, true));
         recyclerView.setAdapter(galleryAdapter);
 
@@ -151,75 +157,6 @@ public class GalleryActivity extends AppCompatActivity {
         });
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        this.imageList.clear();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        if (this.imageList.size() > 0)
-            getMenuInflater().inflate(R.menu.mymenu, menu);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    // handle button activities
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        switch (id) {
-            case android.R.id.home: {
-                createAlertDialog("TapMove", "Are you really sure you want to go back ?", new DialogListener() {
-                    @Override
-                    public void positiveAction() {
-                        finish();
-                    }
-
-                    @Override
-                    public void negativeAction() {
-
-                    }
-                }).show();
-                return true;
-            }
-
-            case R.id.copy_button: {
-                int count = 0;
-                for (GalleryImage galleryImage : this.imageList)
-                {
-                    if (galleryImage.isSelected()) {
-                        this.copyFile(galleryImage.getParentPath(), galleryImage.getFileName(), false);
-                        count++;
-                    }
-                }
-                Toast.makeText(getApplicationContext(), String.valueOf(count) + " images are copied", Toast.LENGTH_LONG).show();
-                finish();
-                break;
-            }
-
-            case R.id.move_button:
-            {
-                int count = 0;
-                for (GalleryImage galleryImage : this.imageList)
-                {
-                    if (galleryImage.isSelected()) {
-                        this.copyFile(galleryImage.getParentPath(), galleryImage.getFileName(), true);
-                        count++;
-                    }
-                }
-                Toast.makeText(getApplicationContext(), String.valueOf(count) + " images are copied", Toast.LENGTH_LONG).show();
-                finish();
-                break;
-            }
-
-            default:
-                break;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == TARGET_FOLDERPICKER_CODE)
@@ -243,12 +180,69 @@ public class GalleryActivity extends AppCompatActivity {
         }
     }
 
-    private void copyFile(String inputPath, String fileName, boolean move) {
-        InputStream in = null;
-        OutputStream out = null;
+    @Override
+    public void onBackPressed() {
+        createAlertDialog("TapMove", "Are you really sure you want to go back ?", new DialogListener() {
+            @Override
+            public void positiveAction() {
+                imageList.clear();
+                finish();
+            }
+
+            @Override
+            public void negativeAction() {
+            }
+        }).show();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        if (this.imageList.size() > 0)
+            getMenuInflater().inflate(R.menu.mymenu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    // handle button activities
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        switch (id) {
+            case android.R.id.home: {
+                onBackPressed();
+                return true;
+            }
+
+            case R.id.copy_button: {
+                int count = this.copySelectedFiles(false);
+                if (count != -1)
+                    Toast.makeText(getApplicationContext(), String.valueOf(count) + " images are copied", Toast.LENGTH_SHORT).show();
+                else
+                    Toast.makeText(getApplicationContext(), "Images already are in the same folder", Toast.LENGTH_SHORT).show();
+                break;
+            }
+
+            case R.id.move_button:
+            {
+                int count = this.copySelectedFiles(true);
+                if (count != -1)
+                    Toast.makeText(getApplicationContext(), String.valueOf(count) + " images are moved", Toast.LENGTH_SHORT).show();
+                else
+                    Toast.makeText(getApplicationContext(), "Images already are in the same folder", Toast.LENGTH_SHORT).show();
+                break;
+            }
+
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private int copySelectedFiles(boolean move) {
         String targetFolderPath = targetFolder.getText().toString();
-        if (! inputPath.equals(targetFolderPath))
+        if (! chosenFolderPath.equals(targetFolderPath))
         {
+            int count = 0;
             try {
                 //create output directory if it doesn't exist
                 File dir = new File(targetFolderPath);
@@ -256,31 +250,60 @@ public class GalleryActivity extends AppCompatActivity {
                 {
                     dir.mkdirs();
                 }
+                ListIterator<GalleryImage> iterator = this.imageList.listIterator();
+                while (iterator.hasNext()) {
+                    int currentIndex = iterator.nextIndex();
+                    GalleryImage galleryImage = iterator.next();
+                    if (galleryImage.isSelected()) {
+                        String fileName = galleryImage.getFileName();
+                        InputStream in = null;
+                        OutputStream out = null;
 
-                in = new FileInputStream(inputPath+"/"+fileName);
-                out = new FileOutputStream(targetFolderPath +"/"+ fileName);
+                        in = new FileInputStream(chosenFolderPath + "/" + fileName);
+                        out = new FileOutputStream(targetFolderPath + "/" + fileName);
 
-                byte[] buffer = new byte[1024];
-                int read;
-                while ((read = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, read);
+                        byte[] buffer = new byte[1024];
+                        int read;
+                        while ((read = in.read(buffer)) != -1) {
+                            out.write(buffer, 0, read);
+                        }
+                        in.close();
+                        in = null;
+
+                        // write the output file
+                        out.flush();
+                        out.close();
+                        out = null;
+
+                        // delete the original file
+                        if (move) {
+                            new File(chosenFolderPath + "/" + fileName).delete();
+                            iterator.remove();
+                            runOnUiThread(() -> galleryAdapter.notifyItemRemoved(currentIndex));
+                        }
+                        count++;
+                    }
                 }
-                in.close();
-                in = null;
-
-                // write the output file
-                out.flush();
-                out.close();
-                out = null;
-
-                // delete the original file
-                if (move) {
-                    new File(inputPath + "/" + fileName).delete();
-                }
-
+                checkBoxUpdate.updateNoSelected();
+                selectAll.setChecked(false);
+                runOnUiThread(() -> galleryAdapter.setAllCheckBoxes(false));
             }
             catch (Exception e) {
                 Log.e("ERROR", e.getMessage());
+            }
+            finally {
+                return count;
+            }
+        }
+        return -1;
+    }
+
+    public void filterList(List list, Predicate condition)
+    {
+        for (int i = list.size() - 1; i >= 0 ; i--)
+        {
+            if (condition.test(list.get(i))) {
+                list.remove(i);
             }
         }
     }
@@ -310,6 +333,6 @@ public class GalleryActivity extends AppCompatActivity {
     }
 }
 
-interface CheckBoxSelect {
-    public void updateNoSelected();
+interface CheckBoxUpdate {
+    void updateNoSelected();
 }

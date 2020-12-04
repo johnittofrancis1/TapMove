@@ -17,10 +17,10 @@ import java.util.ArrayList;
 public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHolder> {
     private ArrayList<GalleryImage> galleryList;
     private Context context;
-    private CheckBoxSelect callback;
+    private CheckBoxUpdate callback;
     private boolean allChecked;
 
-    public GalleryAdapter(Context context, ArrayList<GalleryImage> galleryList, CheckBoxSelect callback) {
+    public GalleryAdapter(Context context, ArrayList<GalleryImage> galleryList, CheckBoxUpdate callback) {
         this.galleryList = galleryList;
         this.context = context;
         this.callback = callback;
@@ -32,15 +32,20 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
         this.callback.updateNoSelected();
     }
 
-    public boolean toggleAllCheckBoxes()
+    public void toggleAllCheckBoxes()
     {
         for (GalleryImage galleryImage : this.galleryList)
             galleryImage.setSelected(! this.allChecked);
         this.allChecked = ! this.allChecked;
         notifyDataSetChanged();
-        return this.allChecked;
     }
 
+    public void setAllCheckBoxes(boolean selectAll)
+    {
+        for (GalleryImage galleryImage : this.galleryList)
+            galleryImage.setSelected(selectAll);
+        notifyDataSetChanged();
+    }
 
     @Override
     public GalleryAdapter.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
