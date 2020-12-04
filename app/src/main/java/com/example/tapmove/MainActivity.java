@@ -199,7 +199,19 @@ public class MainActivity extends AppCompatActivity {
                     String msg = messageView.getText().toString();
                     if (msg.startsWith("This folder"))
                     {
-                        createAlertDialog().show();
+                        createAlertDialog("Do you wish to Proceed ?",
+                                "This folder contains " + inputFiles.size() + " Images",
+                                new DialogListener() {
+                                    @Override
+                                    public void positiveAction() {
+                                        new InferenceTask().execute();
+                                    }
+
+                                    @Override
+                                    public void negativeAction() {
+
+                                    }
+                                }).show();
                     }
                     else {
                         chosenFolder.requestFocus();
@@ -301,18 +313,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private AlertDialog createAlertDialog()
+    private AlertDialog createAlertDialog(String title, String message, final DialogListener dialogListener)
     {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle("Do you wish to Proceed ?")
-                .setMessage("This folder contains " + inputFiles.size() + " Images")
+        builder.setTitle(title)
+                .setMessage(message)
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        new InferenceTask().execute();
+                        dialogListener.positiveAction();
                     }
                 })
                 .setNegativeButton("No", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
+                        dialogListener.negativeAction();
                     }
                 });
         // Create the AlertDialog object and return it

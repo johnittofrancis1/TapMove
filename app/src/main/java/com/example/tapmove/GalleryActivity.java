@@ -1,7 +1,9 @@
 package com.example.tapmove;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Environment;
@@ -13,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -40,6 +43,10 @@ public class GalleryActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setTheme(R.style.AppTheme);
         setContentView(R.layout.activity_gallery);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
 
         recyclerView = (RecyclerView)findViewById(R.id.gallery);
         recyclerView.setHasFixedSize(true);
@@ -157,35 +164,27 @@ public class GalleryActivity extends AppCompatActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == TARGET_FOLDERPICKER_CODE)
-        {
-            if (resultCode == Activity.RESULT_OK) {
-                if (data != null) {
-                    File folder = new File(Environment.getExternalStorageDirectory(), data.getData().getPath().split("primary:")[1]);
-                    final String targetFolderPath = folder.getPath();
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            targetFolder.setText(targetFolderPath);
-                        }
-                    });
-                } else
-                    Toast.makeText(getActivity(), "Canceled", Toast.LENGTH_SHORT).show();
-            }
-            else if (resultCode == Activity.RESULT_CANCELED)  {
-                Toast.makeText(getActivity(), "Canceled", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
     // handle button activities
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
         switch (id) {
+            case android.R.id.home: {
+                createAlertDialog("TapMove", "Are you really sure you want to go back ?", new DialogListener() {
+                    @Override
+                    public void positiveAction() {
+                        finish();
+                    }
+
+                    @Override
+                    public void negativeAction() {
+
+                    }
+                }).show();
+                return true;
+            }
+
             case R.id.copy_button: {
                 int count = 0;
                 for (GalleryImage galleryImage : this.imageList)
@@ -214,10 +213,34 @@ public class GalleryActivity extends AppCompatActivity {
                 finish();
                 break;
             }
+
             default:
                 break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == TARGET_FOLDERPICKER_CODE)
+        {
+            if (resultCode == Activity.RESULT_OK) {
+                if (data != null) {
+                    File folder = new File(Environment.getExternalStorageDirectory(), data.getData().getPath().split("primary:")[1]);
+                    final String targetFolderPath = folder.getPath();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            targetFolder.setText(targetFolderPath);
+                        }
+                    });
+                } else
+                    Toast.makeText(getActivity(), "Canceled", Toast.LENGTH_SHORT).show();
+            }
+            else if (resultCode == Activity.RESULT_CANCELED)  {
+                Toast.makeText(getActivity(), "Canceled", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void copyFile(String inputPath, String fileName, boolean move) {
@@ -260,6 +283,25 @@ public class GalleryActivity extends AppCompatActivity {
                 Log.e("ERROR", e.getMessage());
             }
         }
+    }
+
+    private AlertDialog createAlertDialog(String title, String message, final DialogListener dialogListener)
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialogListener.positiveAction();
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialogListener.negativeAction();
+                    }
+                });
+        // Create the AlertDialog object and return it
+        return builder.create();
     }
 
     public Context getActivity()
