@@ -51,7 +51,9 @@ public class GalleryActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         Bundle args = intent.getBundleExtra("BUNDLE");
-        imageList = (ArrayList<GalleryImage>) args.getSerializable("ARRAYLIST");
+        this.imageList = (ArrayList<GalleryImage>) args.getSerializable("ARRAYLIST");
+
+        Log.e("COUNT", "Total images: "+this.imageList.size());
 
         runOnUiThread(new Runnable() {
             @Override
@@ -69,12 +71,18 @@ public class GalleryActivity extends AppCompatActivity {
 
         CheckBoxSelect checkBoxSelect = new CheckBoxSelect() {
             @Override
-            public void updateNoSelected(final int noSelected) {
+            public void updateNoSelected() {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Spannable spanText = new SpannableString(noSelected+" selected");
-                        spanText.setSpan(new ForegroundColorSpan(Color.CYAN), 0, 0+String.valueOf(noSelected).length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        int count = 0;
+                        for (GalleryImage galleryImage : imageList)
+                        {
+                            if (galleryImage.isSelected())
+                                count++;
+                        }
+                        Spannable spanText = new SpannableString(count+" selected");
+                        spanText.setSpan(new ForegroundColorSpan(Color.CYAN), 0, 0+String.valueOf(count).length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                         noSelectedView.setText(spanText);
                     }
                 });
@@ -84,7 +92,7 @@ public class GalleryActivity extends AppCompatActivity {
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(getApplicationContext(),2);
         recyclerView.setLayoutManager(layoutManager);
 
-        galleryAdapter = new GalleryAdapter(getApplicationContext(), imageList, checkBoxSelect);
+        galleryAdapter = new GalleryAdapter(getApplicationContext(), this.imageList, checkBoxSelect);
         recyclerView.setAdapter(galleryAdapter);
 
         targetFolderButton.setOnClickListener(new View.OnClickListener() {
@@ -125,7 +133,12 @@ public class GalleryActivity extends AppCompatActivity {
         selectAll.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                galleryAdapter.toggleAllCheckBoxes();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        galleryAdapter.toggleAllCheckBoxes();
+                    }
+                });
             }
         });
     }
@@ -133,12 +146,12 @@ public class GalleryActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        imageList.clear();
+        this.imageList.clear();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        if (imageList.size() > 0)
+        if (this.imageList.size() > 0)
             getMenuInflater().inflate(R.menu.mymenu, menu);
         return super.onCreateOptionsMenu(menu);
     }
@@ -173,24 +186,30 @@ public class GalleryActivity extends AppCompatActivity {
 
         switch (id) {
             case R.id.copy_button: {
-                List<Integer> checkedIds = galleryAdapter.getCheckedIds();
-                for (int i : checkedIds)
+                int count = 0;
+                for (GalleryImage galleryImage : this.imageList)
                 {
-                    copyFile(imageList.get(i).getParentPath(), imageList.get(i).getFileName(), false);
+                    if (galleryImage.isSelected()) {
+                        this.copyFile(galleryImage.getParentPath(), galleryImage.getFileName(), false);
+                        count++;
+                    }
                 }
-                Toast.makeText(getApplicationContext(), String.valueOf(checkedIds.size()) + " images are copied", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), String.valueOf(count) + " images are copied", Toast.LENGTH_LONG).show();
                 finish();
                 break;
             }
 
             case R.id.move_button:
             {
-                List<Integer> checkedIds = galleryAdapter.getCheckedIds();
-                for (int i : checkedIds)
+                int count = 0;
+                for (GalleryImage galleryImage : this.imageList)
                 {
-                    copyFile(imageList.get(i).getParentPath(), imageList.get(i).getFileName(), true);
+                    if (galleryImage.isSelected()) {
+                        this.copyFile(galleryImage.getParentPath(), galleryImage.getFileName(), true);
+                        count++;
+                    }
                 }
-                Toast.makeText(getApplicationContext(), String.valueOf(checkedIds.size()) + " images are moved", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), String.valueOf(count) + " images are copied", Toast.LENGTH_LONG).show();
                 finish();
                 break;
             }
@@ -199,7 +218,6 @@ public class GalleryActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
-
 
     private void copyFile(String inputPath, String fileName, boolean move) {
         InputStream in = null;
@@ -250,5 +268,5 @@ public class GalleryActivity extends AppCompatActivity {
 }
 
 interface CheckBoxSelect {
-    public void updateNoSelected(int noSelected);
+    public void updateNoSelected();
 }

@@ -8,11 +8,13 @@ import java.io.Serializable;
 public class GalleryImage implements Serializable {
     private final String fileName;
     private final String parentPath;
+    private boolean isSelected;
 
     public GalleryImage(String parentPath, String fileName)
     {
         this.fileName = fileName;
         this.parentPath = parentPath;
+        this.isSelected = false;
     }
 
     public String getParentPath(){
@@ -25,7 +27,15 @@ public class GalleryImage implements Serializable {
 
     public Bitmap getImage()
     {
-        return BitmapFactory.decodeFile(this.parentPath+"/"+this.fileName);
+        Bitmap image = BitmapFactory.decodeFile(this.parentPath+"/"+this.fileName);
+        return Bitmap.createScaledBitmap(image, image.getWidth(), 600, false);
     }
 
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected) {
+        isSelected = selected;
+    }
 }

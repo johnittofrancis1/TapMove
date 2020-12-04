@@ -16,61 +16,60 @@ import java.util.List;
 
 public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHolder> {
     private ArrayList<GalleryImage> galleryList;
-    private ArrayList<CheckBox> checkBoxList;
     private Context context;
     private CheckBoxSelect callback;
+    private boolean allChecked;
 
     public GalleryAdapter(Context context, ArrayList<GalleryImage> galleryList, CheckBoxSelect callback) {
         this.galleryList = galleryList;
-        this.checkBoxList = new ArrayList<CheckBox>();
         this.context = context;
         this.callback = callback;
-    }
-
-    public List<Integer> getCheckedIds()
-    {
-        List<Integer> ids = new ArrayList<Integer>();
-        for (int i=0;i<checkBoxList.size();i++)
-        {
-            if (checkBoxList.get(i).isChecked())
-                ids.add(i);
-        }
-        return ids;
+        this.allChecked = false;
     }
 
     private void updateNoChecked()
     {
-        int count = 0;
-        for (CheckBox checkBox : this.checkBoxList)
-        {
-            if (checkBox.isChecked())
-                count++;
-        }
-        this.callback.updateNoSelected(count);
+        this.callback.updateNoSelected();
     }
 
-    public void toggleAllCheckBoxes()
+    public boolean toggleAllCheckBoxes()
     {
-        for (CheckBox checkBox : this.checkBoxList)
-        {
-            checkBox.setChecked(! checkBox.isChecked());
-        }
+        for (GalleryImage galleryImage : this.galleryList)
+            galleryImage.setSelected(! this.allChecked);
+        this.allChecked = ! this.allChecked;
+        notifyDataSetChanged();
+        return this.allChecked;
     }
 
 
     @Override
     public GalleryAdapter.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.gallery_image, viewGroup, false);
-        return new ViewHolder(view);
+        ViewHolder viewHolder = new ViewHolder(view);
+        return viewHolder;
     }
 
     @Override
-    public void onBindViewHolder(GalleryAdapter.ViewHolder viewHolder, int i) {
+    public void onBindViewHolder(GalleryAdapter.ViewHolder viewHolder, final int i) {
         viewHolder.img.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        Bitmap bitmap = galleryList.get(i).getImage();
-        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), 1200, false);
+        final GalleryImage galleryImage = galleryList.get(i);
+        Bitmap bitmap = galleryImage.getImage();
+        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), 400, false);
         viewHolder.img.setImageBitmap(scaledBitmap);
+
+        viewHolder.checkBox.setChecked(galleryList.get(i).isSelected());
+
+        viewHolder.checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                Log.e("CHECK", galleryImage.getFileName()+" of index "+i+" is "+b);
+                galleryImage.setSelected(b);
+                updateNoChecked();
+            }
+        });
     }
+
+
 
     @Override
     public int getItemCount() {
@@ -86,14 +85,7 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
 
             this.img = view.findViewById(R.id.image);
             this.checkBox = view.findViewById(R.id.select);
-            GalleryAdapter.this.checkBoxList.add(this.checkBox);
 
-            this.checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                    GalleryAdapter.this.updateNoChecked();
-                }
-            });
         }
     }
 }
