@@ -186,23 +186,34 @@ public class MainActivity extends AppCompatActivity {
         next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String msg = messageView.getText().toString();
-                if (msg.startsWith("This folder"))
-                {
-                    createAlertDialog().show();
+                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                        == PackageManager.PERMISSION_DENIED) {
+
+                    // Requesting the permission
+                    ActivityCompat.requestPermissions(MainActivity.this,
+                            new String[] { Manifest.permission.READ_EXTERNAL_STORAGE },
+                            STORAGE_PERMISSION_CODE);
                 }
-                else {
-                    chosenFolder.requestFocus();
-                    if (msg.equals(""))
+                else
+                {
+                    String msg = messageView.getText().toString();
+                    if (msg.startsWith("This folder"))
                     {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Spannable word = new SpannableString("Enter a path");
-                                word.setSpan(new ForegroundColorSpan(Color.RED), 0, word.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                messageView.setText(word);
-                            }
-                        });
+                        createAlertDialog().show();
+                    }
+                    else {
+                        chosenFolder.requestFocus();
+                        if (msg.equals(""))
+                        {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Spannable word = new SpannableString("Enter a path");
+                                    word.setSpan(new ForegroundColorSpan(Color.RED), 0, word.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    messageView.setText(word);
+                                }
+                            });
+                        }
                     }
                 }
             }
@@ -350,7 +361,6 @@ public class MainActivity extends AppCompatActivity {
                         "Storage Permission Denied",
                         Toast.LENGTH_SHORT)
                         .show();
-                finish();
             }
         }
     }

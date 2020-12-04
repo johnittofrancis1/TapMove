@@ -9,10 +9,10 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHolder> {
     private ArrayList<GalleryImage> galleryList;
@@ -54,22 +54,19 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
         viewHolder.img.setScaleType(ImageView.ScaleType.CENTER_CROP);
         final GalleryImage galleryImage = galleryList.get(i);
         Bitmap bitmap = galleryImage.getImage();
-        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), 400, false);
-        viewHolder.img.setImageBitmap(scaledBitmap);
-
-        viewHolder.checkBox.setChecked(galleryList.get(i).isSelected());
+        viewHolder.img.setImageBitmap(bitmap);
 
         viewHolder.checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                Log.e("CHECK", galleryImage.getFileName()+" of index "+i+" is "+b);
+                Log.e("CHECK", galleryImage.getFileName()+" is selected "+b);
                 galleryImage.setSelected(b);
                 updateNoChecked();
             }
         });
+
+        viewHolder.checkBox.setChecked(galleryImage.isSelected());
     }
-
-
 
     @Override
     public int getItemCount() {
@@ -77,15 +74,14 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder{
-        private ImageView img;
-        private CheckBox checkBox;
+        private final ImageView img;
+        private final CheckBox checkBox;
 
         public ViewHolder(View view) {
             super(view);
 
             this.img = view.findViewById(R.id.image);
             this.checkBox = view.findViewById(R.id.select);
-
         }
     }
 }

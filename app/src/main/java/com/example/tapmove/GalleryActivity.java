@@ -93,6 +93,7 @@ public class GalleryActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
 
         galleryAdapter = new GalleryAdapter(getApplicationContext(), this.imageList, checkBoxSelect);
+        recyclerView.addItemDecoration(new GridSpacingItemDecoration(2, 20, true));
         recyclerView.setAdapter(galleryAdapter);
 
         targetFolderButton.setOnClickListener(new View.OnClickListener() {

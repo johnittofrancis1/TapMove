@@ -27,8 +27,7 @@ public class GalleryImage implements Serializable {
 
     public Bitmap getImage()
     {
-        Bitmap image = BitmapFactory.decodeFile(this.parentPath+"/"+this.fileName);
-        return Bitmap.createScaledBitmap(image, image.getWidth(), 600, false);
+        return BitmapFactory.decodeFile(this.parentPath+"/"+this.fileName);
     }
 
     public boolean isSelected() {
