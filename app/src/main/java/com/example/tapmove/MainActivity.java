@@ -26,7 +26,11 @@ import android.os.Bundle;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import org.tensorflow.lite.Interpreter;
+import org.tensorflow.lite.gpu.CompatibilityList;
+import org.tensorflow.lite.gpu.GpuDelegate;
+import org.tensorflow.lite.nnapi.NnApiDelegate;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -76,6 +80,8 @@ public class MainActivity extends AppCompatActivity {
                     STORAGE_PERMISSION_CODE);
         }
 
+        loadInterpreter();
+
         inputFiles = new HashMap<String, File>();
         imageList = new ArrayList<GalleryImage>();
 
@@ -85,13 +91,6 @@ public class MainActivity extends AppCompatActivity {
         next = findViewById(R.id.next);
 
         chosenFolder.requestFocus();
-
-        try {
-            interpreter = new Interpreter(loadModelFile(MainActivity.this));
-            Log.e("INTERPRETER", "Interpreter is ready");
-        } catch (IOException e) {
-            Log.e("INTERPRETER", e.getMessage());
-        }
 
         folderSelectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -238,6 +237,32 @@ public class MainActivity extends AppCompatActivity {
         interpreter.close();
     }
 
+    private void loadInterpreter()
+    {
+        try {
+            Interpreter.Options options = new Interpreter.Options();
+            CompatibilityList compatList = new CompatibilityList();
+
+            if(compatList.isDelegateSupportedOnThisDevice()){
+                // if the device has a supported GPU, add the GPU delegate
+                GpuDelegate.Options delegateOptions = compatList.getBestOptionsForThisDevice();
+                Log.e("GPU", delegateOptions.toString());
+                GpuDelegate gpuDelegate = new GpuDelegate(delegateOptions);
+                options.addDelegate(gpuDelegate);
+            } else {
+                NnApiDelegate nnApiDelegate = new NnApiDelegate();
+                options.addDelegate(nnApiDelegate);
+                // if the GPU is not supported, run on 4 threads
+                Log.e("GPU", "GPU is not supported on this device");
+                options.setNumThreads(4);
+            }
+            interpreter = new Interpreter(loadModelFile(MainActivity.this), options);
+            Log.e("INTERPRETER", "Interpreter is ready");
+        } catch (IOException e) {
+            Log.e("INTERPRETER", e.getMessage());
+        }
+    }
+
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == INPUT_FOLDERPICKER_CODE) {
@@ -285,7 +310,6 @@ public class MainActivity extends AppCompatActivity {
             progress.dismiss();
             Intent intent = new Intent(getActivity(), GalleryActivity.class);
             Bundle args = new Bundle();
-            Log.e("TRANSFER", String.valueOf(imageList.size()));
             args.putString("CHOSEN_FOLDER_PATH", chosenFolder.getText().toString());
             args.putSerializable("ARRAYLIST",(Serializable) imageList);
             intent.putExtra("BUNDLE",args);
@@ -316,15 +340,17 @@ public class MainActivity extends AppCompatActivity {
 
     private AlertDialog createAlertDialog(String title, String message, final DialogListener dialogListener)
     {
+        Spanned yes = Html.fromHtml("<font color='#03DAC5'>Yes<font>");
+        Spanned no = Html.fromHtml("<font color='#03DAC5'>No<font>");
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle(title)
-                .setMessage(message)
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+        builder.setTitle(Html.fromHtml("<font color='#03DAC5'>"+title+"<font>"))
+                .setMessage(Html.fromHtml("<font color='#03DAC5'>"+message+"<font>"))
+                .setPositiveButton(yes, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         dialogListener.positiveAction();
                     }
                 })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                .setNegativeButton(no, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         dialogListener.negativeAction();
                     }
